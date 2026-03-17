@@ -1,6 +1,6 @@
 # Pixvault — Local Media Gallery
 
-Dark-mode FastAPI gallery for your Downloads folder.  
+Dark-mode FastAPI gallery for your Images.  
 Two pages: **Gallery** (masonry grid, filters, infinite scroll) and **Folders** (thumbnail grid).
 
 ## Documentation
