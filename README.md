@@ -5,6 +5,7 @@ Two pages: **Gallery** (masonry grid, filters, infinite scroll) and **Folders** 
 
 ## Documentation
 
+For full documentation, visit [Project Documentation](https://apedevone.github.io/PixVault/).
 
 ## Features
 
