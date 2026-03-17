@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>PixVault</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0a0a0f;
+    --surface:   #13131a;
+    --border:    #1e1e2e;
+    --accent:    #7c6af7;
+    --accent2:   #e06c8b;
+    --text:      #e2e2ef;
+    --muted:     #6b6b80;
+    --radius:    10px;
+    --gap:       8px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .sort-select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: .3rem .6rem;
+    border-radius: 8px;
+    font-size: .8rem;
+    outline: none;
+    cursor: pointer;
+  }
+  .sort-select:focus { border-color: var(--accent); }
+
+  .nav-stats {
+    font-family: 'Space Mono', monospace;
+    font-size: .72rem;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: .3rem;
+    white-space: nowrap;
+    border: 1px solid var(--border);
+    padding: .2rem .6rem;
+    border-radius: 999px;
+  }
+  .nav-stats i { font-size: .7rem; }
+  .stat-sep { color: var(--border); }
+
+  /* ── Navbar ── */
+  .navbar {
+    background: rgba(10,10,15,.92) !important;
+    backdrop-filter: blur(18px);
+    border-bottom: 1px solid var(--border);
+    padding: .75rem 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+
+    display: flex;
+    align-items: center;
+    position: relative;
+  }
+
+  .navbar-brand {
+    font-family: 'Space Mono', monospace;
+    font-size: 1.6rem;
+    letter-spacing: .05em;
+    color: var(--accent) !important;
+
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .nav-link {
+    color: var(--muted) !important;
+    font-size: .85rem;
+    transition: color .2s;
+  }
+
+  .nav-link:hover,
+  .nav-link.active { color: var(--text) !important; }
+
+  .nav-link.active { color: var(--accent) !important; }
+
+  /* ── Filter bar ── */
+  .filter-wrap {
+    padding: .75rem 1rem;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .filter-visible{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+  }
+  .filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: .3rem .75rem;
+    border-radius: 999px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: .78rem;
+    font-family: 'Space Mono', monospace;
+    cursor: pointer;
+    transition: all .18s;
+    margin-right: 6px;
+    white-space: nowrap;
+    user-select: none;
+    color: #7060DF;
+  }
+  .filter-chip:hover { border-color: var(--accent); color: var(--text); }
+  .filter-chip.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  .filter-chip .badge-count {
+    background: rgba(255,255,255,.15);
+    padding: 1px 6px;
+    border-radius: 999px;
+    font-size: .68rem;
+  }
+  .dropdown-menu-dark {
+    background: #13131A;
+  }
+  #filterDropdown .dropdown-toggle {
+    background-color: #7C6AF7;
+    color: white;
+    border-color: #7C6AF7;
+  }
+  /* ── Controls bar ── */
+  .controls-bar {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .6rem 1rem;
+    background: var(--bg);
+  }
+  .controls-bar .info { color: #7161E0; font-size: .8rem; margin-left: auto; }
+  .btn-icon {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    width: 34px; height: 34px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: all .18s;
+  }
+  .btn-icon:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-icon.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  /* ── Masonry grid ── */
+  #grid {
+    padding: var(--gap);
+    column-gap: var(--gap);
+  }
+  /* responsive columns */
+  @media (min-width: 1400px) { #grid { columns: 6; } }
+  @media (min-width: 1100px) and (max-width: 1399px) { #grid { columns: 5; } }
+  @media (min-width: 800px)  and (max-width: 1099px) { #grid { columns: 4; } }
+  @media (min-width: 600px)  and (max-width: 799px)  { #grid { columns: 3; } }
+  @media (min-width: 400px)  and (max-width: 599px)  { #grid { columns: 2; } }
+  @media (max-width: 399px)  { #grid { columns: 1; } }
+
+  .grid-item {
+    break-inside: avoid;
+    margin-bottom: var(--gap);
+    position: relative;
+    border-radius: var(--radius);
+    overflow: hidden;
+    cursor: pointer;
+    background: var(--surface);
+  }
+  .grid-item img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: var(--radius);
+    transition: transform .3s ease, filter .3s ease;
+    will-change: transform;
+  }
+  .grid-item:hover img { transform: scale(1.03); filter: brightness(.85); }
+  .grid-item .overlay {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    padding: .4rem .6rem;
+    background: linear-gradient(transparent, rgba(0,0,0,.75));
+    opacity: 0;
+    transition: opacity .2s;
+    border-radius: 0 0 var(--radius) var(--radius);
+    display: flex; align-items: center; gap: .4rem;
+  }
+  .grid-item:hover .overlay { opacity: 1; }
+  .overlay .folder-tag {
+    font-size: .68rem;
+    font-family: 'Space Mono', monospace;
+    color: rgba(255,255,255,.7);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+
+  /* skeleton */
+  .skeleton {
+    background: linear-gradient(90deg, var(--surface) 25%, #1e1e2e 50%, var(--surface) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+    border-radius: var(--radius);
+    break-inside: avoid;
+    margin-bottom: var(--gap);
+  }
+  @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+  /* loader sentinel */
+  #sentinel { height: 60px; display: flex; align-items: center; justify-content: center; }
+  #sentinel .spinner-border { color: var(--accent); }
+
+  /* ── Lightbox ── */
+  #lightbox {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.92);
+    z-index: 9999;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(6px);
+  }
+  #lightbox.open { display: flex; }
+  #lightbox img {
+    max-width: 96vw;
+    max-height: 88vh;
+    object-fit: contain;
+    border-radius: 12px;
+    box-shadow: 0 8px 64px rgba(0,0,0,.8);
+    user-select: none;
+  }
+  #lightbox .lb-folder {
+    font-family: 'Space Mono', monospace;
+    font-size: .78rem;
+    color: var(--muted);
+    margin-top: .75rem;
+  }
+  .lb-close {
+    position: fixed;
+    top: 1rem; right: 1rem;
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.1);
+    border: none;
+    color: #fff;
+    font-size: 1.1rem;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    z-index: 10000;
+    transition: background .2s;
+  }
+  .lb-close:hover { background: rgba(255,255,255,.2); }
+  .lb-nav {
+    position: fixed;
+    top: 50%; transform: translateY(-50%);
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.1);
+    border: none;
+    color: #fff;
+    font-size: 1.2rem;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: background .2s;
+    z-index: 10000;
+  }
+  .lb-nav:hover { background: rgba(255,255,255,.25); }
+  #lb-prev { left: .75rem; }
+  #lb-next { right: .75rem; }
+
+  /* empty / error states */
+  .empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--muted);
+  }
+  .empty-state i { font-size: 3rem; display: block; margin-bottom: 1rem; color: var(--border); }
+
+  /* smooth fade-in for images */
+  .fade-in { animation: fadeIn .35s ease forwards; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  /* toast */
+  #toast-wrap { position: fixed; bottom: 1rem; left: 50%; transform: translateX(-50%); z-index: 9998; }
+  .toast-msg {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: .5rem 1.25rem;
+    border-radius: 999px;
+    font-size: .82rem;
+    box-shadow: 0 4px 24px rgba(0,0,0,.5);
+    animation: toastIn .25s ease, toastOut .3s ease 1.5s forwards;
+  }
+  @keyframes toastIn  { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform:none; } }
+  @keyframes toastOut { to { opacity:0; } }
+</style>
+</head>
+<body>
+
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+  <div class="container-fluid">
+
+    <a class="navbar-brand" href="#">
+      PixVault
+    </a>
+
+    <button
+      class="navbar-toggler"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#navbarNav"
+      aria-controls="navbarNav"
+      aria-expanded="false"
+      aria-label="Toggle navigation"
+    >
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <div class="navbar-nav ms-auto">
+        <a class="nav-link active" href="/">Gallery</a>
+        <a class="nav-link" href="/folders">Folders</a>
+      </div>
+    </div>
+
+    <span class="nav-stats" id="navStats" title="Unique visitors / Total visits">
+      <i class="bi bi-eye"></i>
+      <span id="statUnique">—</span>
+      <span class="stat-sep">·</span>
+      <i class="bi bi-bar-chart"></i>
+      <span id="statCumul">—</span>
+    </span>
+
+  </div>
+</nav>
+
+<!-- Filter bar -->
+<div class="filter-wrap" id="filterBar">
+
+  <div id="filterVisible" class="filter-visible">
+    <span class="filter-chip active" data-tag="" onclick="selectFilter('')">
+      <i class="bi bi-images"></i> All
+    </span>
+  </div>
+
+  <div class="dropdown" id="filterDropdown" style="display:none;">
+    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+      More
+    </button>
+    <div class="dropdown-menu dropdown-menu-dark p-2" id="filterHidden"></div>
+  </div>
+
+</div>
+<!-- Controls bar -->
+<div class="controls-bar">
+  <button class="btn-icon active" id="btnShuffle" title="Shuffle">
+    <i class="bi bi-shuffle"></i>
+  </button>
+  <button class="btn-icon" id="btnReset" title="Reset scroll">
+    <i class="bi bi-arrow-counterclockwise"></i>
+  </button>
+  <button class="btn-icon" id="btnClearFilters" title="Clear filters" style="display:none;border-color:var(--accent2);color:var(--accent2)" onclick="toggleFilter('')">
+    <i class="bi bi-x-circle"></i>
+  </button>
+  <select id="sortSelect" class="sort-select">
+    <option value="">Shuffle</option>
+    <option value="hot">🔥 Hot</option>
+    <option value="newest">Newest first</option>
+    <option value="oldest">Oldest first</option>
+  </select>
+  <span class="info" id="countLabel">Loading…</span>
+</div>
+
+<!-- Masonry grid -->
+<div id="grid"></div>
+
+<!-- Infinite scroll sentinel -->
+<div id="sentinel">
+  <div class="spinner-border spinner-border-sm" role="status"></div>
+</div>
+<div id="endMsg" style="display:none;text-align:center;padding:2rem;color:var(--muted);font-size:.8rem;font-family:'Space Mono',monospace;">— end of gallery —</div>
+
+<!-- Lightbox -->
+<div id="lightbox">
+  <button class="lb-close" onclick="closeLb()"><i class="bi bi-x-lg"></i></button>
+  <button class="lb-nav" id="lb-prev" onclick="lbNav(-1)"><i class="bi bi-chevron-left"></i></button>
+  <img id="lb-img" src="" alt="">
+  <div class="lb-folder" id="lb-folder"></div>
+  <button class="lb-nav" id="lb-next" onclick="lbNav(1)"><i class="bi bi-chevron-right"></i></button>
+</div>
+
+<!-- Toast -->
+<div id="toast-wrap"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+
+// ── State ──────────────────────────────────────────────────────────────────
+let page = 1;
+let loading = false;
+let hasMore = true;
+let activeTags = new Set();   // multi-select
+let shuffle = true;
+let sortMode = '';
+let totalImages = 0;
+let allItems = [];
+let lbIndex = 0;
+
+// ── Filters ────────────────────────────────────────────────────────────────
+const MAX_VISIBLE_TAGS = window.innerWidth < 768 ? 2 : 14;
+
+// Fixed tags in desired order
+const FIXED_TAGS = ['Instagram','Airport','2026','2025','2024','2023','2022','2021','2020','2019','2018','2017','2016','2015'];
+
+async function loadFilters() {
+  try {
+    const res = await fetch('/api/filters');
+    let filters = await res.json();
+
+    const visible = document.getElementById('filterVisible');
+    const hidden = document.getElementById('filterHidden');
+    const dropdown = document.getElementById('filterDropdown');
+
+    // Create a map of tag -> filter object for easy lookup
+    const filterMap = new Map(filters.map(f => [f.tag, f]));
+
+    // Build fixed filters in the order of FIXED_TAGS
+    const fixedFilters = FIXED_TAGS
+      .map(tag => filterMap.get(tag))
+      .filter(Boolean); // remove any tags not in the API response
+
+    // Collect the rest of the filters
+    const otherFilters = filters.filter(f => !FIXED_TAGS.includes(f.tag));
+
+    // Merge fixed filters first, then others
+    filters = [...fixedFilters, ...otherFilters];
+
+    filters.forEach(({ tag, count }, i) => {
+      const chip = document.createElement('span');
+      chip.className = 'filter-chip';
+      chip.dataset.tag = tag;
+      chip.innerHTML = `<i class="bi bi-tag"></i> ${tag} <span class="badge-count">${count}</span>`;
+      chip.onclick = () => toggleFilter(tag);
+
+      if (i < MAX_VISIBLE_TAGS) {
+        visible.appendChild(chip);
+      } else {
+        dropdown.style.display = 'block';
+        hidden.appendChild(chip);
+      }
+    });
+
+  } catch (e) {
+    console.error('Filters failed', e);
+  }
+}
+
+function toggleFilter(tag) {
+  if (tag === '') {
+    // All — clear everything
+    activeTags.clear();
+  } else {
+    if (activeTags.has(tag)) {
+      activeTags.delete(tag);
+    } else {
+      activeTags.add(tag);
+    }
+  }
+  updateChipUI();
+  resetGrid();
+}
+
+function updateChipUI() {
+  const allActive = activeTags.size === 0;
+  document.querySelectorAll('.filter-chip').forEach(c => {
+    if (c.dataset.tag === '') {
+      c.classList.toggle('active', allActive);
+    } else {
+      c.classList.toggle('active', activeTags.has(c.dataset.tag));
+    }
+  });
+  // show clear button only when filters active
+  const clearBtn = document.getElementById('btnClearFilters');
+  if (clearBtn) clearBtn.style.display = activeTags.size > 0 ? 'flex' : 'none';
+}
+
+// Wire up "All" chip
+document.addEventListener('DOMContentLoaded', () => {
+  const allChip = document.querySelector('.filter-chip[data-tag=""]');
+  if (allChip) allChip.onclick = () => toggleFilter('');
+});
+
+// ── Grid ───────────────────────────────────────────────────────────────────
+function resetGrid() {
+  page = 1;
+  hasMore = true;
+  allItems = [];
+  document.getElementById('grid').innerHTML = '';
+  document.getElementById('endMsg').style.display = 'none';
+  document.getElementById('sentinel').style.display = 'flex';
+  loadMore();
+}
+
+async function loadMore() {
+  if (loading || !hasMore) return;
+  loading = true;
+
+  // Add skeletons
+  const skeletons = [];
+  for (let i = 0; i < 12; i++) {
+    const sk = document.createElement('div');
+    const h = 120 + Math.floor(Math.random() * 200);
+    sk.className = 'skeleton';
+    sk.style.height = h + 'px';
+    document.getElementById('grid').appendChild(sk);
+    skeletons.push(sk);
+  }
+
+  try {
+    const tagParam = activeTags.size > 0 ? '&tags=' + encodeURIComponent([...activeTags].join(',')) : '';
+    const sortParam = sortMode ? `&sort=${sortMode}` : '';
+    const url = `/api/images?page=${page}&per_page=40&shuffle=${shuffle}${tagParam}${sortParam}`;
+    const res = await fetch(url);
+    const data = await res.json();
+
+    // Remove skeletons
+    skeletons.forEach(s => s.remove());
+
+    totalImages = data.total;
+    hasMore = data.has_more;
+    page++;
+
+    document.getElementById('countLabel').textContent = `${totalImages.toLocaleString()} images`;
+
+    if (data.items.length === 0 && allItems.length === 0) {
+      document.getElementById('grid').innerHTML = `
+        <div class="empty-state" style="column-span:all">
+          <i class="bi bi-image-alt"></i>
+          <p>No images found for <code>${activeTags.size > 0 ? [...activeTags].join(' + ') : 'Archive'}</code></p>
+          <small>Check your GALLERY</small>
+        </div>`;
+      document.getElementById('sentinel').style.display = 'none';
+      return;
+    }
+
+    data.items.forEach(item => {
+      allItems.push(item);
+      appendItem(item, allItems.length - 1);
+    });
+
+    if (!hasMore) {
+      document.getElementById('sentinel').style.display = 'none';
+      document.getElementById('endMsg').style.display = 'block';
+    }
+  } catch(e) {
+    skeletons.forEach(s => s.remove());
+    console.error('Load failed', e);
+    toast('Failed to load images — check server');
+  } finally {
+    loading = false;
+  }
+}
+
+function appendItem(item, idx) {
+  const div = document.createElement('div');
+  div.className = 'grid-item fade-in';
+  div.dataset.idx = idx;
+
+  const img = document.createElement('img');
+  //img.src = item.url;
+  img.src = item.thumb_url || item.url;
+  img.alt = item.folder;
+  img.loading = 'lazy';
+  img.decoding = 'async';
+
+  const overlay = document.createElement('div');
+  overlay.className = 'overlay';
+  overlay.innerHTML = `<span class="folder-tag"><i class="bi bi-folder2 me-1"></i>${item.display_name || item.folder}</span>`;
+
+  div.appendChild(img);
+  div.appendChild(overlay);
+  div.onclick = () => openLb(idx);
+
+  document.getElementById('grid').appendChild(div);
+}
+
+// ── Infinite scroll ────────────────────────────────────────────────────────
+const observer = new IntersectionObserver(entries => {
+  if (entries[0].isIntersecting) loadMore();
+}, { rootMargin: '400px' });
+observer.observe(document.getElementById('sentinel'));
+
+// ── Controls ───────────────────────────────────────────────────────────────
+document.getElementById('btnShuffle').onclick = function() {
+  shuffle = !shuffle;
+  sortMode = '';
+  document.getElementById('sortSelect').value = '';
+  this.classList.toggle('active', shuffle);
+  toast(shuffle ? 'Shuffle ON' : 'Shuffle OFF');
+  resetGrid();
+};
+
+document.getElementById('btnReset').onclick = () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+// ── Lightbox ───────────────────────────────────────────────────────────────
+function openLb(idx) {
+  lbIndex = idx;
+  setLb(allItems[idx]);
+  document.getElementById('lightbox').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  // log this image click
+  fetch('/api/hot/image?url=' + encodeURIComponent(allItems[idx].url), { method: 'POST' });
+}
+function closeLb() {
+  document.getElementById('lightbox').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function setLb(item) {
+  document.getElementById('lb-img').src = item.url;
+  document.getElementById('lb-folder').textContent = item.display_name || item.folder;
+}
+function lbNav(dir) {
+  lbIndex = (lbIndex + dir + allItems.length) % allItems.length;
+  setLb(allItems[lbIndex]);
+}
+
+document.getElementById('lightbox').addEventListener('click', e => {
+  if (e.target === document.getElementById('lightbox')) closeLb();
+});
+
+document.addEventListener('keydown', e => {
+  if (!document.getElementById('lightbox').classList.contains('open')) return;
+  if (e.key === 'Escape') closeLb();
+  if (e.key === 'ArrowRight') lbNav(1);
+  if (e.key === 'ArrowLeft') lbNav(-1);
+});
+
+// Touch swipe on lightbox
+let touchStartX = 0;
+document.getElementById('lightbox').addEventListener('touchstart', e => {
+  touchStartX = e.changedTouches[0].clientX;
+}, { passive: true });
+document.getElementById('lightbox').addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  if (Math.abs(dx) > 50) lbNav(dx < 0 ? 1 : -1);
+}, { passive: true });
+
+// ── Toast ──────────────────────────────────────────────────────────────────
+function toast(msg) {
+  const wrap = document.getElementById('toast-wrap');
+  const el = document.createElement('div');
+  el.className = 'toast-msg';
+  el.textContent = msg;
+  wrap.appendChild(el);
+  setTimeout(() => el.remove(), 2000);
+}
+
+document.getElementById('sortSelect').addEventListener('change', function() {
+  sortMode = this.value;
+  shuffle = (sortMode === '');
+  document.getElementById('btnShuffle').classList.toggle('active', shuffle);
+  resetGrid();
+});
+
+// ── Init ───────────────────────────────────────────────────────────────────
+loadFilters();
+loadMore();
+async function loadStats() {
+  try {
+    const res = await fetch('/api/stats');
+    const d = await res.json();
+    document.getElementById('statUnique').textContent = d.unique.toLocaleString();
+    document.getElementById('statCumul').textContent  = d.cumulative.toLocaleString();
+  } catch(e) {}
+}
+loadStats();
+</script>
+</body>
+</html>
