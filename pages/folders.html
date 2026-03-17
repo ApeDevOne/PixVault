@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>PixVault</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<style>
+
+  :root {
+    --bg:        #0a0a0f;
+    --surface:   #13131a;
+    --border:    #1e1e2e;
+    --accent:    #7c6af7;
+    --accent2:   #e06c8b;
+    --text:      #e2e2ef;
+    --muted:     #6b6b80;
+    --radius:    10px;
+    --gap:       10px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  .sort-select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: .3rem .6rem;
+    border-radius: 8px;
+    font-size: .8rem;
+    outline: none;
+    cursor: pointer;
+  }
+  .sort-select:focus { border-color: var(--accent); }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+  }
+
+  .nav-stats {
+    font-family: 'Space Mono', monospace;
+    font-size: .72rem;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: .3rem;
+    white-space: nowrap;
+    border: 1px solid var(--border);
+    padding: .2rem .6rem;
+    border-radius: 999px;
+  }
+  .nav-stats i { font-size: .7rem; }
+  .stat-sep { color: var(--border); }
+
+  /* ── Navbar ── */
+  .navbar {
+    background: rgba(10,10,15,.92) !important;
+    backdrop-filter: blur(18px);
+    border-bottom: 1px solid var(--border);
+    padding: .75rem 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+  }
+  .navbar-brand {
+    font-family: 'Space Mono', monospace;
+    font-size: 1.1rem;
+    letter-spacing: .05em;
+    color: var(--accent) !important;
+  }
+  .nav-link { color: var(--muted) !important; font-size: .85rem; transition: color .2s; }
+  .nav-link:hover { color: var(--text) !important; }
+  .nav-link.active { color: var(--accent) !important; }
+
+  /* ── Search bar ── */
+  .search-wrap {
+    padding: .75rem 1rem;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: .5rem;
+    align-items: center;
+  }
+  .search-input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: .45rem .9rem;
+    border-radius: 8px;
+    font-size: .88rem;
+    outline: none;
+    transition: border-color .2s;
+  }
+  .search-input:focus { border-color: var(--accent); }
+  .search-input::placeholder { color: var(--muted); }
+  .count-badge {
+    font-family: 'Space Mono', monospace;
+    font-size: .75rem;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  /* ── Folder grid ── */
+  #folderGrid {
+    display: grid;
+    gap: var(--gap);
+    padding: var(--gap);
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  }
+  @media (max-width: 480px) {
+    #folderGrid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+  }
+
+  /* ── Folder card ── */
+  .folder-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform .2s, border-color .2s, box-shadow .2s;
+    position: relative;
+  }
+  .folder-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--accent);
+    box-shadow: 0 6px 24px rgba(124,106,247,.2);
+  }
+  .folder-thumb {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    display: block;
+    background: var(--border);
+    transition: filter .25s;
+  }
+  .folder-card:hover .folder-thumb { filter: brightness(.75); }
+  .folder-info {
+    padding: .5rem .6rem;
+    border-top: 1px solid var(--border);
+  }
+  .folder-count {
+    font-size: .7rem;
+    color: var(--muted);
+    margin-top: 2px;
+    display: flex;
+    align-items: center;
+    gap: .3rem;
+  }
+  .folder-tags {
+    margin-top: .3rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+  }
+  .tag-pill {
+    font-size: .6rem;
+    font-family: 'Space Mono', monospace;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: rgba(124,106,247,.15);
+    color: var(--accent);
+    border: 1px solid rgba(124,106,247,.2);
+    white-space: nowrap;
+  }
+
+  /* Skeleton */
+  .skel-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .skel-thumb {
+    width: 100%; aspect-ratio: 1;
+    background: linear-gradient(90deg, var(--surface) 25%, #1e1e2e 50%, var(--surface) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+  }
+  .skel-line {
+    height: 12px; margin: .5rem .6rem;
+    border-radius: 4px;
+    background: linear-gradient(90deg, var(--surface) 25%, #1e1e2e 50%, var(--surface) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+  }
+  @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+  /* ── Modal lightbox for folder view ── */
+  #folderModal {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.88);
+    z-index: 9999;
+    backdrop-filter: blur(6px);
+    flex-direction: column;
+    overflow: hidden;
+  }
+  #folderModal.open { display: flex; }
+
+  .modal-header-bar {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: .75rem 1rem;
+    background: rgba(10,10,15,.95);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .modal-header-bar .sort-select {
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+  .modal-header-bar h5 {
+    font-family: 'Space Mono', monospace;
+    font-size: .9rem;
+    color: var(--text);
+    margin: 0;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .btn-close-modal {
+    background: rgba(255,255,255,.08);
+    border: none;
+    color: var(--text);
+    width: 34px; height: 34px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .btn-close-modal:hover { background: rgba(255,255,255,.16); }
+
+  #modalGrid {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: var(--gap);
+    display: grid;
+    gap: var(--gap);
+    grid-template-columns: repeat(auto-fill, minmax(clamp(140px, 20vw, 300px), 1fr));/*columns width*/
+    max-width: 100%;
+    align-content: start;
+  }
+
+  .modal-img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform .2s, filter .2s;
+    display: block;
+    background: var(--border);
+  }
+  .modal-img:hover { transform: scale(1.04); filter: brightness(.8); }
+
+  /* ── Lightbox for single image ── */
+  #lightbox {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.95);
+    z-index: 10000;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(8px);
+  }
+  #lightbox.open { display: flex; }
+  #lightbox img {
+    max-width: 96vw; max-height: 92vh;
+    object-fit: contain;
+    border-radius: 12px;
+    user-select: none;
+  }
+  .lb-close {
+    position: fixed; top: 1rem; right: 1rem;
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.12);
+    border: none; color: #fff;
+    font-size: 1.1rem;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; z-index: 10001;
+  }
+  .lb-close:hover { background: rgba(255,255,255,.22); }
+  .lb-nav {
+    position: fixed; top: 50%; transform: translateY(-50%);
+    width: 44px; height: 44px; border-radius: 50%;
+    background: rgba(255,255,255,.1); border: none; color: #fff;
+    font-size: 1.2rem;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; z-index: 10001; transition: background .2s;
+  }
+  .lb-nav:hover { background: rgba(255,255,255,.25); }
+  #lb-prev { left: .75rem; }
+  #lb-next { right: .75rem; }
+
+  .fade-in { animation: fadeIn .3s ease forwards; }
+  @keyframes fadeIn { from { opacity:0; transform: scale(.97); } to { opacity:1; transform: none; } }
+
+  .empty-state { text-align: center; padding: 4rem 2rem; color: var(--muted); }
+  .empty-state i { font-size: 3rem; display: block; margin-bottom: 1rem; color: var(--border); }
+</style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar">
+  <div class="d-flex align-items-center w-100 gap-3">
+    <span class="navbar-brand"><i class="bi bi-grid-3x3-gap-fill me-2"></i>PixVault</span>
+    <a href="/" class="nav-link ms-auto">Gallery</a>
+    <a href="/folders" class="nav-link active">Folders</a>
+    <span class="nav-stats" id="navStats" title="Unique visitors / Total visits">
+      <i class="bi bi-eye"></i> <span id="statUnique">—</span>
+      <span class="stat-sep">·</span>
+      <i class="bi bi-bar-chart"></i> <span id="statCumul">—</span>
+    </span>
+  </div>
+</nav>
+
+<!-- Search -->
+<div class="search-wrap">
+  <input type="search" class="search-input" id="searchInput" placeholder="Search folders">
+  <span class="count-badge" id="countBadge">—</span>
+  <select id="folderSortSelect" class="sort-select">
+    <option value="default">Default</option>
+    <option value="hot">🔥 Hot</option>
+    <option value="newest">Newest first</option>
+    <option value="oldest">Oldest first</option>
+    <option value="most">Most photos</option>
+    <option value="least">Least photos</option>
+    <option value="az">A → Z</option>
+    <option value="za">Z → A</option>
+  </select>
+</div>
+
+<!-- Folder grid -->
+<div id="folderGrid">
+  <!-- skeleton placeholders -->
+  <div id="skelWrap">
+    <script>
+      for(let i=0;i<24;i++) document.write(`
+        <div class="skel-card">
+          <div class="skel-thumb"></div>
+          <div class="skel-line" style="width:70%"></div>
+          <div class="skel-line" style="width:40%;margin-top:4px"></div>
+        </div>`);
+    </script>
+  </div>
+</div>
+
+<!-- Folder image modal -->
+<div id="folderModal">
+  <div class="modal-header-bar">
+  <button class="btn-close-modal" onclick="closeModal()"><i class="bi bi-x-lg"></i></button>
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">
+    <h5 id="modalTitle" style="margin:0">Folder</h5>
+    <span style="font-size:.75rem;color:var(--muted)" id="modalCount"></span>
+  </div>
+  <select id="modalSortSelect" class="sort-select" style="flex-shrink:0;background:#333;color:white;border:1px solid #666">
+    <option value="">Default</option>
+    <option value="newest">Newest first</option>
+    <option value="oldest">Oldest first</option>
+  </select>
+  </div>
+  <div id="modalGrid">
+    <div id="modalSentinel" style="height:40px;display:flex;align-items:center;justify-content:center;grid-column:1/-1">
+      <div class="spinner-border spinner-border-sm text-secondary"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Single image lightbox -->
+<div id="lightbox">
+  <button class="lb-close" onclick="closeLb()"><i class="bi bi-x-lg"></i></button>
+  <button class="lb-nav" id="lb-prev" onclick="lbNav(-1)"><i class="bi bi-chevron-left"></i></button>
+  <img id="lb-img" src="" alt="">
+  <button class="lb-nav" id="lb-next" onclick="lbNav(1)"><i class="bi bi-chevron-right"></i></button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+let allFolders = [];
+let filteredFolders = [];
+let modalSort = '';
+let modalAbortController = null;
+document.getElementById('modalSortSelect').addEventListener('change', function() {
+  if (modalAbortController) modalAbortController.abort();
+  modalLoading = false;
+  modalSort = this.value;
+  modalPage = 1;
+  modalHasMore = true;
+  modalItems = [];
+  document.getElementById('modalGrid').innerHTML = '<div id="modalSentinel" style="height:40px;display:flex;align-items:center;justify-content:center;grid-column:1/-1"><div class="spinner-border spinner-border-sm text-secondary"></div></div>';
+  modalObserver.disconnect();
+  //setTimeout(() => modalObserver.observe(document.getElementById('modalSentinel')), 100);
+  loadModalPage();
+});
+function sortFolders(folders, mode) {
+  const f = [...folders];
+  if (mode === 'newest') f.sort((a, b) => (b.mtime_latest || 0) - (a.mtime_latest || 0));
+  else if (mode === 'oldest') f.sort((a, b) => (a.mtime_earliest || 0) - (b.mtime_earliest || 0));
+  else if (mode === 'most') f.sort((a, b) => b.count - a.count);
+  else if (mode === 'least') f.sort((a, b) => a.count - b.count);
+  else if (mode === 'az') f.sort((a, b) => (a.display_name||a.name).localeCompare(b.display_name||b.name));
+  else if (mode === 'za') f.sort((a, b) => (b.display_name||b.name).localeCompare(a.display_name||a.name));
+  return f;
+}
+
+document.getElementById('folderSortSelect').addEventListener('change', async function() {
+  const mode = this.value;
+  if (mode === 'hot') {
+    // fetch server-side hot sort
+    const res = await fetch('/api/folders?sort=hot');
+    const hotFolders = await res.json();
+    renderFolders(hotFolders);
+    updateCount(hotFolders.length);
+  } else {
+    const sorted = sortFolders(filteredFolders, mode);
+    renderFolders(sorted);
+  }
+});
+
+// ── Load folders ──────────────────────────────────────────────────────────
+async function loadFolders() {
+  try {
+    const res = await fetch('/api/folders');
+    allFolders = await res.json();
+    filteredFolders = allFolders;
+    document.getElementById('skelWrap').remove();
+    renderFolders(allFolders);
+    updateCount(allFolders.length);
+  } catch(e) {
+    console.error(e);
+    document.getElementById('folderGrid').innerHTML =
+      `<div class="empty-state" style="grid-column:1/-1">
+        <i class="bi bi-exclamation-circle"></i>
+        <p>Could not load folders. Is the server running?</p>
+      </div>`;
+  }
+}
+
+function renderFolders(folders) {
+  const grid = document.getElementById('folderGrid');
+  // remove old cards (leave skelWrap if still present)
+  grid.querySelectorAll('.folder-card').forEach(c => c.remove());
+
+  if (folders.length === 0) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+      <i class="bi bi-folder-x"></i><p>No folders found</p></div>`;
+    return;
+  }
+
+  folders.forEach(f => {
+    const card = document.createElement('div');
+    card.className = 'folder-card fade-in';
+    card.onclick = () => openFolder(f.name, f.display_name || f.name);
+
+    const img = document.createElement('img');
+    img.className = 'folder-thumb';
+    img.src = f.thumbnail;
+    img.alt = f.name;
+    //img.loading = 'lazy';
+    img.loading = 'lazy';
+    img.decoding = 'async';
+
+    const info = document.createElement('div');
+    info.className = 'folder-info';
+
+    const displayName = f.display_name || f.name;
+    const cardLabel = displayName.length > 22 ? displayName.slice(0,20)+'…' : displayName;
+    info.innerHTML = `
+      <div style="font-size:.8rem;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${displayName}">${cardLabel}</div>
+      <div class="folder-count"><i class="bi bi-images"></i>${f.count.toLocaleString()} photos</div>
+      <div class="folder-tags">${f.tags.slice(0,3).map(t=>`<span class="tag-pill">${t}</span>`).join('')}</div>
+    `;
+
+    card.appendChild(img);
+    card.appendChild(info);
+    grid.appendChild(card);
+  });
+}
+
+function updateCount(n) {
+  document.getElementById('countBadge').textContent = `${n.toLocaleString()} folder${n!==1?'s':''}`;
+}
+
+// ── Search ────────────────────────────────────────────────────────────────
+document.getElementById('searchInput').addEventListener('input', function() {
+  const q = this.value.toLowerCase().trim();
+  filteredFolders = q ? allFolders.filter(f =>
+    f.name.toLowerCase().includes(q) || f.tags.some(t => t.includes(q))
+  ) : allFolders;
+  renderFolders(filteredFolders);
+  updateCount(filteredFolders.length);
+});
+
+// ── Folder modal ──────────────────────────────────────────────────────────
+let modalPage = 1;
+let modalHasMore = true;
+let modalLoading = false;
+let modalFolder = '';
+let modalItems = [];
+let lbIndex = 0;
+
+async function openFolder(name, displayName) {
+  // log folder visit
+  fetch('/api/hot/folder?name=' + encodeURIComponent(name), { method: 'POST' });
+  modalFolder = name;
+  modalPage = 1;
+  modalHasMore = true;
+  modalItems = [];
+  modalSort = '';
+  document.getElementById('modalSortSelect').value = '';
+  const grid = document.getElementById('modalGrid');
+  grid.innerHTML = '<div id="modalSentinel" style="height:40px;display:flex;align-items:center;justify-content:center;grid-column:1/-1"><div class="spinner-border spinner-border-sm text-secondary"></div></div>';
+  modalObserver.disconnect();
+  document.getElementById('modalTitle').textContent = displayName || name;
+  document.getElementById('modalCount').textContent = '';
+  document.getElementById('folderModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  await loadModalPage();
+}
+
+async function loadModalPage() {
+  if (modalLoading || !modalHasMore) return;
+  modalLoading = true;
+  document.getElementById('modalSentinel').style.display = 'flex';
+  modalAbortController = new AbortController();
+  try {
+    const res = await fetch(`/api/folder/${encodeURIComponent(modalFolder)}?page=${modalPage}&per_page=20&sort=${modalSort||''}`, { signal: modalAbortController.signal });
+    const data = await res.json();
+    modalHasMore = data.has_more;
+    modalPage++;
+    document.getElementById('modalCount').textContent = `${data.total.toLocaleString()} photos`;
+
+    const sentinel = document.getElementById('modalSentinel');
+    data.items.forEach(item => {
+      modalItems.push(item);
+      const img = document.createElement('img');
+      img.className = 'modal-img fade-in';
+      img.src = item.thumb_url || item.url;
+      img.alt = item.folder;
+      img.loading = 'lazy';
+      img.dataset.idx = modalItems.length - 1;
+      img.onclick = () => openLb(parseInt(img.dataset.idx));
+      document.getElementById('modalGrid').insertBefore(img, sentinel);
+    });
+
+    if (!modalHasMore) {
+      if (sentinel) sentinel.style.display = 'none';
+    } else if (sentinel) {
+      document.getElementById('modalGrid').appendChild(sentinel);
+      modalObserver.disconnect();
+      setTimeout(() => modalObserver.observe(sentinel), 300);
+    }
+  } catch(e) {
+    if (e.name !== 'AbortError') console.error(e);
+  } finally { modalLoading = false; }
+}
+
+const modalObserver = new IntersectionObserver(entries => {
+  if (entries[0].isIntersecting && !modalLoading && modalHasMore) loadModalPage();
+}, { root: document.getElementById('modalGrid'), rootMargin: '300px' });
+
+document.getElementById('modalGrid').addEventListener('scroll', () => {
+  const grid = document.getElementById('modalGrid');
+  if (!modalLoading && modalHasMore && grid.scrollTop + grid.clientHeight >= grid.scrollHeight - 800) {
+    loadModalPage();
+  }
+}, { passive: true });
+function closeModal() {
+  if (modalAbortController) modalAbortController.abort();
+  modalObserver.disconnect();
+  modalLoading = false;
+  modalHasMore = false;
+  document.getElementById('folderModal').classList.remove('open');
+  document.getElementById('modalGrid').innerHTML = '';
+  document.body.style.overflow = '';
+}
+
+// Close modal on back button (Android)
+window.addEventListener('popstate', () => {
+  if (document.getElementById('lightbox').classList.contains('open')) closeLb();
+  else if (document.getElementById('folderModal').classList.contains('open')) closeModal();
+});
+
+document.getElementById('folderModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('folderModal')) closeModal();
+});
+
+// ── Lightbox ──────────────────────────────────────────────────────────────
+function openLb(idx) {
+  lbIndex = idx;
+  document.getElementById('lb-img').src = modalItems[idx].url;
+  document.getElementById('lightbox').classList.add('open');
+  history.pushState({ lb: true }, '');
+  // log this image click
+  fetch('/api/hot/image?url=' + encodeURIComponent(modalItems[idx].url), { method: 'POST' });
+}
+function closeLb() {
+  document.getElementById('lightbox').classList.remove('open');
+}
+function lbNav(dir) {
+  lbIndex = (lbIndex + dir + modalItems.length) % modalItems.length;
+  document.getElementById('lb-img').src = modalItems[lbIndex].url;
+}
+
+document.getElementById('lightbox').addEventListener('click', e => {
+  if (e.target === document.getElementById('lightbox')) closeLb();
+});
+
+document.addEventListener('keydown', e => {
+  if (!document.getElementById('lightbox').classList.contains('open')) return;
+  if (e.key === 'Escape') closeLb();
+  if (e.key === 'ArrowRight') lbNav(1);
+  if (e.key === 'ArrowLeft') lbNav(-1);
+});
+
+// Touch swipe on lightbox
+let touchStartX = 0;
+document.getElementById('lightbox').addEventListener('touchstart', e => {
+  touchStartX = e.changedTouches[0].clientX;
+}, { passive: true });
+document.getElementById('lightbox').addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  if (Math.abs(dx) > 50) lbNav(dx < 0 ? 1 : -1);
+}, { passive: true });
+
+// ── Init ──────────────────────────────────────────────────────────────────
+loadFolders();
+
+async function loadStats() {
+  try {
+    const res = await fetch('/api/stats');
+    const d = await res.json();
+    document.getElementById('statUnique').textContent = d.unique.toLocaleString();
+    document.getElementById('statCumul').textContent  = d.cumulative.toLocaleString();
+  } catch(e) {}
+}
+loadStats();
+</script>
+</body>
+</html>
