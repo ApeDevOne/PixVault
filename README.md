@@ -1,4 +1,4 @@
-# Pixvault — Local Media Gallery
+# PixVault — Local Media Gallery
 
 Dark-mode FastAPI gallery for your Images.  
 Two pages: **Gallery** (masonry grid, filters, infinite scroll) and **Folders** (thumbnail grid).
@@ -27,7 +27,7 @@ For full documentation, visit [Project Documentation](https://apedevone.github.i
 ## Directory Structure
 
 ```
-gallery/
+PixVault/
 ├── main.py          # FastAPI app
 ├── requirements.txt
 ├── pages/
